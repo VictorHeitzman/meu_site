@@ -32,7 +32,6 @@ async function realizarLogin(e) {
     return mostrarErro("Preencha todos os campos.");
   }
 
-  // Estado de carregamento no botão
   btnEntrar.disabled = true;
   btnEntrar.textContent = "Autenticando...";
 
@@ -46,11 +45,16 @@ async function realizarLogin(e) {
     const data = await response.json();
 
     if (response.ok) {
-      // Salva a sessão associada ao slug da empresa retornada pela API
-      localStorage.setItem(`session_admin_${data.slug}`, data.token);
-      
-      // Redireciona para o painel administrativo da loja encontrada
-      window.location.href = `/admin/${data.slug}`;
+      if (data.total_lojas === 1) {
+        // Se a conta tem apenas 1 loja, salva a sessão e entra direto
+        const loja = data.lojas[0];
+        localStorage.setItem(`session_admin_${loja.slug}`, loja.id);
+        window.location.href = `/admin/${loja.slug}`;
+      } else {
+        // Se tem 2 ou mais lojas, salva a lista e vai para a tela de seleção
+        localStorage.setItem('contas_lojas', JSON.stringify(data.lojas));
+        window.location.href = '/selecionar-loja';
+      }
     } else {
       mostrarErro(data.detail || 'E-mail ou senha incorretos.');
     }

@@ -1,12 +1,12 @@
 """API do catálogo: Vitrine pública e API CRUD Completa para o Admin."""
 
 import uuid
+import bcrypt
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Optional
 
-from fastapi import Header
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Header, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import Response, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -15,57 +15,76 @@ from pydantic import BaseModel
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.exc import IntegrityError
+
 from app.database import get_session
 from app.models import Categoria, Loja, Produto
-from sqlalchemy.exc import IntegrityError
 
 app = FastAPI(title="Catálogos Digitais - Admin API", version="0.2.0")
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-import bcrypt
-from pydantic import BaseModel
 
 class LoginSchema(BaseModel):
     email: str
     senha: str
 
+
+# --- ROTAS DE PÁGINAS INSTITUCIONAIS E LOGIN (DECLARAR ANTES DAS ROTAS DINÂMICAS) ---
+
 @app.get("/apresentacao", response_class=HTMLResponse)
 def pagina_apresentacao(request: Request):
-    return templates.TemplateResponse(
-        request=request, 
-        name="apresentacao.html"
-    )
-# 1. Rota da página de login genérica
-@app.get("/login")
-def pagina_login(request: Request):
-    return templates.TemplateResponse(request=request, name="login.html", context={})
+    return templates.TemplateResponse(request=request, name="apresentacao.html")
 
-# 2. Endpoint da API que busca a loja pelo e-mail e valida a senha
+@app.get("/login", response_class=HTMLResponse)
+def pagina_login(request: Request):
+    return templates.TemplateResponse(request=request, name="login.html")
+
+@app.get("/selecionar-loja", response_class=HTMLResponse)
+def pagina_selecionar_loja(request: Request):
+    return templates.TemplateResponse(request=request, name="selecionar_loja.html")
+
+
+# --- API DE AUTENTICAÇÃO ---
+
 @app.post("/api/login")
 def api_login_generico(dados: LoginSchema, session: Session = Depends(get_session)):
     email_limpo = dados.email.lower().strip()
     
-    # Busca a loja diretamente pelo e-mail cadastrado
-    loja = session.exec(select(Loja).where(Loja.email == email_limpo)).first()
-    if not loja or not loja.senha_hash:
+    # Busca TODAS as lojas associadas a este e-mail
+    lojas = session.exec(select(Loja).where(Loja.email == email_limpo)).all()
+    if not lojas:
         raise HTTPException(status_code=401, detail="E-mail ou senha incorretos.")
 
-    # Valida a senha enviada
+    loja_referencia = lojas[0]
+    if not loja_referencia.senha_hash:
+        raise HTTPException(status_code=401, detail="E-mail ou senha incorretos.")
+
     senha_bytes = dados.senha.encode('utf-8')[:72]
-    hash_bytes = loja.senha_hash.encode('utf-8')
+    hash_bytes = loja_referencia.senha_hash.encode('utf-8')
 
     if not bcrypt.checkpw(senha_bytes, hash_bytes):
         raise HTTPException(status_code=401, detail="E-mail ou senha incorretos.")
 
-    # Retorna o token e o slug da loja encontrada para o redirecionamento
+    lista_lojas = [
+        {
+            "id": str(l.id),
+            "nome": l.nome,
+            "slug": l.slug,
+            "whatsapp": l.whatsapp
+        }
+        for l in lojas
+    ]
+
     return {
         "status": "sucesso", 
-        "token": str(loja.id), 
-        "slug": loja.slug
+        "total_lojas": len(lista_lojas),
+        "lojas": lista_lojas
     }
 
+
 # --- SCHEMAS DE ENTRADA (PYDANTIC) ---
+
 class ConfiguracaoSchema(BaseModel):
     nome: Optional[str] = None
     cor_primaria: str
@@ -154,10 +173,8 @@ def buscar_dados_admin(slug: str, authorization: str = Header(None), session: Se
         ]
     })
 
-# --- ROTAS DE PÁGINAS (HTML) ---
-@app.get("/{slug}")
-def vitrine(slug: str, request: Request):
-    return templates.TemplateResponse(request=request, name="index.html", context={"slug": slug})
+
+# --- ROTAS DE ADMIN E VITRINE (DECLARADAS DEPOIS) ---
 
 @app.get("/admin/{slug}")
 def pagina_admin(slug: str, request: Request, session: Session = Depends(get_session)):
@@ -166,7 +183,13 @@ def pagina_admin(slug: str, request: Request, session: Session = Depends(get_ses
         raise HTTPException(status_code=404, detail="Loja não encontrada.")
     return templates.TemplateResponse(request=request, name="admin.html", context={"slug": slug})
 
+@app.get("/{slug}")
+def vitrine(slug: str, request: Request):
+    return templates.TemplateResponse(request=request, name="index.html", context={"slug": slug})
+
+
 # --- ROTAS DE API PÚBLICA ---
+
 @app.get("/api/{slug}")
 def api_catalogo(slug: str, session: Session = Depends(get_session)) -> dict[str, Any]:
     loja = _buscar_loja_por_slug(session, slug)
@@ -200,10 +223,8 @@ def api_catalogo(slug: str, session: Session = Depends(get_session)) -> dict[str
         ],
     })
 
-# --- ROTAS CRUD ADMIN ---
 
-# 1. Configurações da Loja
-# No app/main.py
+# --- ROTAS CRUD ADMIN ---
 
 @app.post("/api/admin/{slug}/configuracoes")
 def salvar_configuracoes(slug: str, dados: ConfiguracaoSchema, session: Session = Depends(get_session)):
@@ -211,15 +232,12 @@ def salvar_configuracoes(slug: str, dados: ConfiguracaoSchema, session: Session 
     if not loja:
         raise HTTPException(status_code=404, detail="Loja não encontrada.")
 
-    # 1. Atualiza diretamente a coluna 'nome' da tabela 'lojas'
     if dados.nome and dados.nome.strip():
         loja.nome = dados.nome.strip()
 
-    # 2. Atualiza o WhatsApp
     if dados.whatsapp is not None:
         loja.whatsapp = dados.whatsapp
 
-    # 3. Atualiza as configurações JSONB
     nova_config = {
         "identidade": {
             "cor_primaria": dados.cor_primaria,
@@ -237,7 +255,6 @@ def salvar_configuracoes(slug: str, dados: ConfiguracaoSchema, session: Session 
     loja.configuracoes = nova_config
     flag_modified(loja, "configuracoes")
 
-    # Força a persistência explicitamente
     session.add(loja)
     session.commit()
     session.refresh(loja)
@@ -245,7 +262,6 @@ def salvar_configuracoes(slug: str, dados: ConfiguracaoSchema, session: Session 
     return {"status": "sucesso", "mensagem": "Configurações atualizadas!"}
 
 
-# 2. Categorias (Criar e Deletar)
 @app.post("/api/admin/{slug}/categorias")
 def criar_categoria(slug: str, dados: CategoriaSchema, session: Session = Depends(get_session)):
     loja = session.exec(select(Loja).where(Loja.slug == slug)).first()
@@ -271,7 +287,6 @@ def criar_categoria(slug: str, dados: CategoriaSchema, session: Session = Depend
 
     except IntegrityError:
         session.rollback()
-        # Captura o nome duplicado e avisa ao usuário com status 400 em vez de crashar o servidor
         raise HTTPException(
             status_code=400, 
             detail=f"A categoria '{nome_limpo}' já está cadastrada nesta loja."
@@ -279,6 +294,7 @@ def criar_categoria(slug: str, dados: CategoriaSchema, session: Session = Depend
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.delete("/api/admin/categorias/{categoria_id}")
 def deletar_categoria(categoria_id: str, session: Session = Depends(get_session)):
@@ -298,7 +314,7 @@ def deletar_categoria(categoria_id: str, session: Session = Depends(get_session)
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao deletar: {str(e)}")
-# 3. Produtos (Criar, Editar e Deletar)
+
 
 @app.post("/api/admin/{slug}/produtos")
 def criar_produto(slug: str, dados: ProdutoSchema, session: Session = Depends(get_session)):
@@ -319,6 +335,7 @@ def criar_produto(slug: str, dados: ProdutoSchema, session: Session = Depends(ge
     session.commit()
     return {"status": "sucesso"}
 
+
 @app.put("/api/admin/produtos/{produto_id}")
 def editar_produto(produto_id: str, dados: ProdutoSchema, session: Session = Depends(get_session)):
     prod = session.exec(select(Produto).where(Produto.id == uuid.UUID(produto_id))).first()
@@ -335,6 +352,7 @@ def editar_produto(produto_id: str, dados: ProdutoSchema, session: Session = Dep
     session.add(prod)
     session.commit()
     return {"status": "sucesso"}
+
 
 @app.delete("/api/admin/produtos/{produto_id}")
 def deletar_produto(produto_id: str, session: Session = Depends(get_session)):
