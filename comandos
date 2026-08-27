@@ -1,0 +1,10 @@
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+barbearia
+http://127.0.0.1:8000/admin/barbearia-pedreira
+http://127.0.0.1:8000/barbearia-pedreira
+
+
+acm
+http://127.0.0.1:8000/admin/acm-master
+http://127.0.0.1:8000/acm-master

@@ -1,0 +1,88 @@
+/* ==========================================================================
+   ESTILOS VISUAIS DA VITRINE E CARROSSEL DUAL
+   ========================================================================== */
+
+:root {
+  --cor-primaria: #111827;
+  --cor-secundaria: #f59e0b;
+  --cor-fundo: #f8fafc;
+  --cor-texto: #111827;
+}
+
+body {
+  background-color: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Utilitários de Cores Dinâmicas */
+.bg-primaria { background-color: var(--cor-primaria); }
+.bg-secundaria { background-color: var(--cor-secundaria); }
+.text-primaria { color: var(--cor-primaria); }
+.text-secundaria { color: var(--cor-secundaria); }
+.border-primaria { border-color: var(--cor-primaria); }
+.border-secundaria { border-color: var(--cor-secundaria); }
+
+/* Customização dos botões principais com a Cor Secundária */
+.btn-destaque {
+  background-color: var(--cor-secundaria);
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.btn-destaque:hover {
+  filter: brightness(0.9);
+}
+
+/* Ocultar scrollbars */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Sombra e Efeitos nos Cards */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.12);
+}
+
+/* Força o texto das categorias e botões secundários a ficarem visíveis em qualquer fundo */
+.titulo-categoria {
+  color: var(--cor-texto-categoria, #ffffff);
+}
+
+/* Quando o fundo for escuro, garante que o texto principal adapte o contraste */
+body {
+  background-color: var(--cor-fundo);
+  color: #1e293b; /* Padrão para cards claros */
+}
+
+/* Ajuste nos textos auxiliares das seções */
+.texto-suave-categoria {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.texto-suave-categoria:hover {
+  color: #ffffff !important;
+}
+
+/* Quando o fundo for ESCURO */
+#conteudo.tema-escuro .titulo-cat { color: #ffffff; }
+#conteudo.tema-escuro .btn-ver-tudo { color: rgba(255, 255, 255, 0.7); }
+#conteudo.tema-escuro .btn-ver-tudo:hover { color: #ffffff; }
+#conteudo.tema-escuro .btn-seta-carrossel {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Quando o fundo for CLARO */
+#conteudo.tema-claro .titulo-cat { color: #0f172a; }
+#conteudo.tema-claro .btn-ver-tudo { color: #64748b; }
+#conteudo.tema-claro .btn-ver-tudo:hover { color: #0f172a; }
+#conteudo.tema-claro .btn-seta-carrossel {
+  background-color: #ffffff;
+  color: #334155;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}

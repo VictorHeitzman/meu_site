@@ -1,0 +1,32 @@
+# Projeto: SaaS Multitenant de Catálogos Digitais via WhatsApp
+
+## Arquitetura Geral
+- **Backend:** Python + FastAPI + SQLModel (SQLAlchemy) + PostgreSQL (Supabase).
+- **Arquitetura Multitenant:** Única instância backend consultando dados isolados via `loja_id` e filtrando por `slug` na rota `GET /{slug}`.
+- **Estratégia de Domínio:** 1 único domínio (ex: `meucatalogo.com.br`) servindo múltiplas lojas via URLs dinâmicas (`/barbearia-do-tio`, `/acm-master`).
+
+## Estrutura do Banco de Dados
+1. `lojas`:
+   - `id` (UUID), `nome` (str), `slug` (str, unique, index), `whatsapp` (str), `email` (str), `senha_hash` (str)[cite: 1].
+   - `configuracoes` (JSONB): guarda padrão visual (cores primária/secundária/fundo, logo, banner, textos institucionais e horários)[cite: 1].
+2. `categorias`:
+   - `id` (UUID/INT), `loja_id` (FK -> lojas.id), `nome` (str)[cite: 1].
+3. `produtos`:
+   - `id` (UUID/INT), `loja_id` (FK -> lojas.id), `categoria_id` (FK -> categorias.id)[cite: 1].
+   - `nome` (str), `preco` (float, default 0.0), `descricao` (str, aceita textos longos/detalhados), `imagem_url` (str)[cite: 1].
+   - `metadados` (JSONB): guarda opções do produto (ex: tamanhos/cores para varejo) OU galeria de fotos/flag `orcamento_apenas` para serviços[cite: 1].
+
+## Regras de Negócio e Renderização Condicional (Frontend One-Page)
+- **Caso 1: Varejo Tradicional (Ex: Barbearia / Loja de Roupas)**[cite: 1]
+  - Produto possui `preco > 0`[cite: 1].
+  - Exibe card de produto limpo com preço visível e botão "Adicionar à Sacola"[cite: 1].
+  - Permite seleção de atributos dinâmicos armazenados em `metadados` (como `tamanhos: ["P", "M", "G"]`)[cite: 1].
+- **Caso 2: Prestação de Serviços / Portfólio (Ex: ACM Master - Banners/Toldos)**[cite: 1]
+  - Produto possui `preco == 0.0` ou flag `metadados.orcamento_apenas == true`[cite: 1].
+  - Oculta a exibição de preço (mostra "Sob Consulta" ou esconde)[cite: 1].
+  - Exibe o botão principal "Solicitar Orçamento"[cite: 1].
+  - Se `metadados.fotos_trabalhos` existir, ativa o carrossel de fotos do portfólio no modal[cite: 1].
+
+## Regras de Código
+- Escrever código modular, assíncrono quando couber, com tratamento de exceções (HTTP 404 para slugs inexistentes)[cite: 1].
+- Utilizar `pydantic-settings` ou `python-dotenv` para variáveis de ambiente (`DATABASE_URL`)[cite: 1].

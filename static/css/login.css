@@ -1,0 +1,8 @@
+/* Estilos isolados da tela de login */
+body {
+  background: radial-gradient(circle at top, #1e293b, #0f172a);
+}
+
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+}

@@ -1,0 +1,19 @@
+/* Customizações visuais do Painel do Lojista */
+
+.color-picker-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.5rem;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

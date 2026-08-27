@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel do Lojista — Gestão Profissional</title>
+  
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Cropper.js para Recorte de Capa -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+  <!-- CSS Customizado -->
+  <link rel="stylesheet" href="/static/css/admin.css" />
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- =========================================================================
+       HEADER DA PÁGINA
+       ========================================================================= -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 id="admin-titulo" class="font-bold text-sm sm:text-base leading-tight">Painel de Gestão</h1>
+          <p class="text-[11px] text-slate-400">Plataforma Multitenant</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="btn-ver-vitrine" href="#" target="_blank" 
+           class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-sm">
+          <span>Ver Vitrine</span>
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+        </a>
+        <button onclick="deslogarAdmin()" 
+                class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 transition">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Sair</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTEÚDO PRINCIPAL
+       ========================================================================= -->
+  <main class="max-w-6xl mx-auto w-full p-4 sm:p-6 flex-1 space-y-6">
+
+    <!-- Notificações Toast -->
+    <div id="alerta" class="hidden p-4 rounded-xl font-medium text-sm transition-all shadow-md flex items-center gap-2"></div>
+
+    <!-- Navegação por Abas -->
+    <div class="flex border-b border-slate-200 gap-2 overflow-x-auto no-scrollbar pb-1">
+      <button onclick="mudarAba('produtos')" id="tab-produtos" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-slate-900 text-white shadow-sm transition">
+        <i data-lucide="package" class="w-4 h-4"></i> Catálogo & Produtos
+      </button>
+      <button onclick="mudarAba('categorias')" id="tab-categorias" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-white text-slate-600 hover:bg-slate-200 transition">
+        <i data-lucide="folder" class="w-4 h-4"></i> Categorias
+      </button>
+      <button onclick="mudarAba('aparencia')" id="tab-aparencia" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-white text-slate-600 hover:bg-slate-200 transition">
+        <i data-lucide="palette" class="w-4 h-4"></i> Personalização & Capa
+      </button>
+    </div>
+
+    <!-- -----------------------------------------------------------------------
+         SEÇÃO 1: CATÁLOGO & PRODUTOS
+    ----------------------------------------------------------------------- -->
+        <!-- SEÇÃO 1: CATÁLOGO & PRODUTOS -->
+    <section id="sec-produtos" class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Itens do Catálogo</h2>
+          <p class="text-xs text-slate-500">Gerencie preços, fotos e detalhes dos produtos e serviços.</p>
+        </div>
+        <button onclick="abrirModalProduto()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition self-start sm:self-auto">
+          <i data-lucide="plus" class="w-4 h-4"></i> Adicionar Item
+        </button>
+      </div>
+
+      <!-- BARRA DE PESQUISA DO ADMIN -->
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input type="text" id="input-busca-admin" onkeyup="filtrarProdutosAdmin(this.value)" placeholder="Pesquisar produto por nome ou categoria..." 
+              class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-sm">
+      </div>
+
+      <div id="lista-produtos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Renderizado dinamicamente via JavaScript -->
+      </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------------
+         SEÇÃO 2: CATEGORIAS
+         ----------------------------------------------------------------------- -->
+    <section id="sec-categorias" class="hidden space-y-4 max-w-2xl">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Categorias da Loja</h2>
+          <p class="text-xs text-slate-500">Crie seções para organizar os itens na vitrine.</p>
+        </div>
+        <form onsubmit="cadastrarCategoria(event)" class="flex gap-2">
+          <input type="text" id="cat_nome" placeholder="Nome da Categoria (Ex: Barba, Banners, Camisetas)" required 
+                 class="flex-1 p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+          <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition">
+            Criar
+          </button>
+        </form>
+        <div id="lista-categorias" class="flex flex-wrap gap-2 pt-2"></div>
+      </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------------
+         SEÇÃO 3: PERSONALIZAÇÃO, LOGO E CAPA
+         ----------------------------------------------------------------------- -->
+    <section id="sec-aparencia" class="hidden space-y-6">
+      <form onsubmit="salvarConfiguracoes(event)" class="space-y-6">
+        
+        <!-- Upload de Logo e Banner -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="image" class="w-4 h-4 text-indigo-600"></i> Logo e Capa do Site
+          </h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Logo -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-2">Logo Oficial (Quadrada/Redonda)</label>
+              <div class="flex items-center gap-4">
+                <div class="relative w-24 h-24 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden">
+                  <img id="preview-logo" src="" class="hidden w-full h-full object-cover" />
+                  <div id="ph-logo" class="text-center p-2 text-slate-400">
+                    <i data-lucide="camera" class="w-6 h-6 mx-auto"></i>
+                    <span class="text-[10px]">Anexar</span>
+                  </div>
+                </div>
+                <div class="flex-1 space-y-2">
+                  <input type="file" id="file-logo" accept="image/*" onchange="uploadLogoAparencia(this)" class="hidden">
+                  <button type="button" onclick="document.getElementById('file-logo').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 transition">
+                    Selecionar Imagem
+                  </button>
+                  <input type="hidden" id="input-logo-url">
+                  <p class="text-[11px] text-slate-400">Recomendado: 300x300px PNG ou JPG.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Banner Capa -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-2">Capa do Site / Banner Topo</label>
+              <div class="relative w-full h-24 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden">
+                <img id="preview-banner" src="" class="hidden w-full h-full object-cover" />
+                <div id="ph-banner" class="text-center p-2 text-slate-400">
+                  <i data-lucide="image" class="w-6 h-6 mx-auto"></i>
+                  <span class="text-[10px]">Anexar Capa da Loja</span>
+                </div>
+              </div>
+              <div class="mt-2 flex items-center justify-between">
+                <input type="file" id="file-banner" accept="image/*" class="hidden">
+                <button type="button" onclick="document.getElementById('file-banner').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 transition">
+                  Alterar Capa
+                </button>
+                <input type="hidden" id="input-banner-url">
+                <p class="text-[11px] text-slate-400">Proporção ideal: 1200x400px.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dados da Empresa -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="store" class="w-4 h-4 text-indigo-600"></i> Dados da Empresa
+          </h2>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Nome Comercial da Loja</label>
+              <input type="text" id="loja_nome_input" required placeholder="Ex: Barbearia Silva, ACM Master..." 
+                    class="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+              <p class="text-[10px] text-slate-400 mt-1">Este nome será exibido no topo da vitrine.</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">WhatsApp para Pedidos/Contato</label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <i data-lucide="message-square" class="w-4 h-4"></i>
+                </div>
+                <input type="text" id="whatsapp" placeholder="(11) 99999-9999" maxlength="15"
+                      oninput="mascaraWhatsapp(this)"
+                      class="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+              <p class="text-[10px] text-slate-400 mt-1">Informe o DDD + Número. Ex: (11) 98765-4321</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paleta de Cores e Textos -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="palette" class="w-4 h-4 text-indigo-600"></i> Esquema de Cores & Informações
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Cor Primária</label>
+              <div class="flex items-center gap-2">
+                <input type="color" id="cor_primaria" onchange="atualizarPreviewCores()" class="color-picker-swatch w-10 h-10 cursor-pointer">
+                <span id="hex-primaria" class="text-xs font-mono font-semibold text-slate-600">#111827</span>
+              </div>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Cor Secundária</label>
+              <div class="flex items-center gap-2">
+                <input type="color" id="cor_secundaria" onchange="atualizarPreviewCores()" class="color-picker-swatch w-10 h-10 cursor-pointer">
+                <span id="hex-secundaria" class="text-xs font-mono font-semibold text-slate-600">#F59E0B</span>
+              </div>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Cor do Fundo</label>
+              <div class="flex items-center gap-2">
+                <input type="color" id="cor_fundo" onchange="atualizarPreviewCores()" class="color-picker-swatch w-10 h-10 cursor-pointer">
+                <span id="hex-fundo" class="text-xs font-mono font-semibold text-slate-600">#FAFAF9</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Slogan / Subtítulo</label>
+              <textarea id="subtitulo" rows="3" placeholder="Insira o texto..." class="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none resize-y"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Texto de Rodapé</label>
+              <textarea id="rodape" rows="3" placeholder="Insira o texto..." class="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none resize-y"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-6 py-3 rounded-xl shadow-md transition">
+          Salvar Personalização do Site
+        </button>
+      </form>
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       MODAL: ADICIONAR / EDITAR PRODUTO
+       ========================================================================= -->
+  <div id="modal-produto" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 id="modal-prod-titulo" class="font-bold text-base text-slate-900">Novo Item</h3>
+        <button type="button" onclick="fecharModalProduto()" class="p-1 rounded-lg text-slate-400 hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="salvarProduto(event)" class="space-y-4">
+        <input type="hidden" id="prod_id_edit">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Categoria</label>
+            <select id="prod_categoria" required class="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none bg-slate-50"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Nome do Item</label>
+            <input type="text" id="prod_nome" required class="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none">
+          </div>
+        </div>
+
+        <!-- Área da Galeria Múltipla -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-semibold text-slate-700">Galeria de Imagens (Variações / Portfólio)</label>
+            <span class="text-[10px] text-slate-400">Primeira foto = Capa principal</span>
+          </div>
+
+          <div class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center bg-slate-50 hover:bg-slate-100/80 transition cursor-pointer" 
+               onclick="document.getElementById('file-prod-multi').click()">
+            <i data-lucide="upload-cloud" class="w-6 h-6 mx-auto text-slate-400 mb-1"></i>
+            <p class="text-xs font-semibold text-slate-600">Clique para adicionar fotos</p>
+            <p class="text-[10px] text-slate-400">Selecione uma ou mais fotos do seu computador/celular</p>
+            <input type="file" id="file-prod-multi" accept="image/*" multiple class="hidden" onchange="gerenciarUploadFotos(this)">
+          </div>
+
+          <div id="grid-fotos-produto" class="flex flex-wrap gap-2 mt-3"></div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Preço (R$)</label>
+          <input type="number" step="0.01" id="prod_preco" placeholder="0.00" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none">
+          <span class="text-[10px] text-slate-400">0.00 = Ativa modo Orçamento/Portfólio</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Descrição Completa</label>
+          <textarea id="prod_descricao" rows="3" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 border-t pt-4">
+          <button type="button" onclick="fecharModalProduto()" class="px-4 py-2 text-xs font-semibold text-slate-600">Cancelar</button>
+          <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 text-xs font-semibold rounded-xl transition shadow-sm">
+            Salvar Item
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: RECORTE DA CAPA (CROPPER.JS)
+       ========================================================================= -->
+  <div id="modal-crop-banner" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-base text-slate-900">Ajustar Enquadramento da Capa</h3>
+        <button type="button" onclick="fecharModalCrop()" class="p-1 rounded-lg text-slate-400 hover:bg-slate-100">✕</button>
+      </div>
+
+      <div class="max-h-[60vh] overflow-hidden bg-slate-900 rounded-xl flex items-center justify-center">
+        <img id="img-crop-target" src="" class="max-w-full block" />
+      </div>
+
+      <div class="flex items-center justify-between border-t pt-4">
+        <p class="text-xs text-slate-500">Arraste e ajuste para definir a melhor posição da capa.</p>
+        <div class="flex gap-2">
+          <button type="button" onclick="fecharModalCrop()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
+          <button type="button" onclick="confirmarRecorteCapa()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 text-xs font-semibold rounded-xl shadow-sm transition">
+            Confirmar Recorte
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: CONFIRMAÇÃO DE EXCLUSÃO CUSTOMIZADO
+       ========================================================================= -->
+  <div id="modal-confirmar" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-100">
+      <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 mx-auto flex items-center justify-center">
+        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+      </div>
+      
+      <div>
+        <h3 id="confirm-titulo" class="font-bold text-slate-900 text-base">Excluir Item?</h3>
+        <p id="confirm-mensagem" class="text-xs text-slate-500 mt-1">Essa ação não poderá ser desfeita.</p>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="fecharModalConfirm()" class="flex-1 py-2.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+          Cancelar
+        </button>
+        <button type="button" onclick="executarExclusaoConfirmada()" class="flex-1 py-2.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-xl shadow-sm transition">
+          Sim, Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carregamento do Script JS Principal -->
+  <script src="/static/js/admin.js"></script>
+</body>
+</html>
