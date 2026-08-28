@@ -86,3 +86,17 @@ body {
   color: #334155;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+
+/* Ajuste inteligente quando A LOJA TEM CAPA */
+header.tem-capa {
+  padding-top: 1.25rem !important; /* Cria o espaço no topo do header */
+}
+
+header.tem-capa #logo-container {
+  margin-top: -2.5rem !important; /* Puxa a logo para cima do banner */
+}
+
+/* Quando A LOJA NÃO TEM CAPA */
+header:not(.tem-capa) #logo-container {
+  margin-top: 0 !important; /* Reseta qualquer margem negativa */
+}

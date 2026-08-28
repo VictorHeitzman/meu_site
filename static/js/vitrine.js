@@ -73,7 +73,6 @@ function aplicarIdentidade(loja) {
   root.setProperty("--cor-secundaria", iden.cor_secundaria || "#F59E0B");
   root.setProperty("--cor-fundo", corFundo);
 
-  // 👈 ADICIONE ESTA PARTE PARA ATIVAR O TEMA CLARO/ESCURO NO CONTAINER:
   const conteudo = document.getElementById("conteudo");
   if (conteudo) {
     if (eFundoEscuro(corFundo)) {
@@ -92,16 +91,29 @@ function aplicarIdentidade(loja) {
   document.getElementById("loja-subtitulo").textContent = textos.subtitulo || "";
   document.getElementById("loja-rodape").textContent = textos.rodape || "Atendimento via WhatsApp";
 
-  if (iden.logo_url) {
-    const logo = document.getElementById("logo");
-    logo.src = iden.logo_url;
-    document.getElementById("logo-container").classList.remove("hidden");
-  }
+  // --- TRATAMENTO DINÂMICO DA CAPA E LOGO ---
+  const header = document.getElementById("loja-header");
+  const logoContainer = document.getElementById("logo-container");
+  const bannerWrap = document.getElementById("banner-wrap");
 
   if (iden.banner_url) {
     const banner = document.getElementById("banner");
     banner.src = iden.banner_url;
-    document.getElementById("banner-wrap").classList.remove("hidden");
+    bannerWrap.classList.remove("hidden");
+    
+    // Liga a classe de layout com capa
+    if (header) header.classList.add("tem-capa");
+  } else {
+    bannerWrap.classList.add("hidden");
+    
+    // Desliga a classe de layout com capa
+    if (header) header.classList.remove("tem-capa");
+  }
+
+  if (iden.logo_url) {
+    const logo = document.getElementById("logo");
+    logo.src = iden.logo_url;
+    if (logoContainer) logoContainer.classList.remove("hidden");
   }
 }
 
