@@ -32,7 +32,7 @@ class LoginSchema(BaseModel):
 
 # --- ROTAS DE PÁGINAS INSTITUCIONAIS E LOGIN (DECLARAR ANTES DAS ROTAS DINÂMICAS) ---
 
-@app.get("/apresentacao", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 def pagina_apresentacao(request: Request):
     return templates.TemplateResponse(request=request, name="apresentacao.html")
 
